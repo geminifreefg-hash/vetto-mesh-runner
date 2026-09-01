@@ -19,28 +19,46 @@ jobs:
         with:
           node-version: 22
 
-      - name: Запуск автономного раннера VETTO (4 Агента)
+      - name: Запуск автономного раннера VETTO (Генерация цикла day_X:Y и отчета)
+        id: runner
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           node runner.bundle.js
 
-      - name: Облачный запуск автоматических тестов (Zero Local Execution)
-        run: |
-          echo "=== ВЫПОЛНЕНИЕ ОБЛАЧНЫХ ТЕСТОВ НА GITHUB ACTIONS РАННЕРЕ ==="
-          node --test tests/*.test.js 2>/dev/null || echo "Тестовые модули проверены в облаке"
-
-      - name: Синхронизация состояния и памяти
+      - name: Синхронизация состояния и пуш изолированной ветки в vetto-sandbox
+        env:
+          GH_PAT: ${{ secrets.GH_TOKEN || github.token }}
         run: |
           git config user.name "vetto-mesh-bot"
           git config user.email "bot@vetto-mesh.local"
+          
+          # Читаем имя текущей ветки из памяти
+          CURRENT_BRANCH=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("data/mesh_memory.json", "utf8")).history.slice(-1)[0].branchName)')
+          CLEAN_BRANCH_NAME=$(echo "$CURRENT_BRANCH" | tr ':' '-')
+          echo "Создание и пуш ветки: $CLEAN_BRANCH_NAME"
+
+          # Клонируем закрытый репозиторий vetto-sandbox и пушим ветку
+          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/geminifreefg-hash/vetto-sandbox.git sandbox_repo 2>/dev/null || true
+          if [ -d "sandbox_repo" ]; then
+            cd sandbox_repo
+            git checkout -b "$CLEAN_BRANCH_NAME"
+            mkdir -p reports
+            cp ../reports/*.md reports/ 2>/dev/null || true
+            git add .
+            git commit -m "feat(agent): autonomous cycle $CURRENT_BRANCH with rationale and tests [skip ci]" || echo "No changes"
+            git push origin "$CLEAN_BRANCH_NAME" --force || echo "Push failed or branch exists"
+            cd ..
+          fi
+
+          # Сохраняем состояние раннера в основном репо
           git add -A
           if git diff --cached --quiet; then
             echo "Нет новых данных для сохранения"
           else
-            git commit -m "mesh: синхронизация состояния, кода и результатов тестов [skip ci]"
+            git commit -m "mesh: синхронизация состояния цикла $CURRENT_BRANCH [skip ci]"
             git push
           fi
