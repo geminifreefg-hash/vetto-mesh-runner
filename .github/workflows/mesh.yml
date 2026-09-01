@@ -2,8 +2,12 @@ name: mesh-runner-24-7
 
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"   # Непиковые интервалы каждые 15 минут для обхода очереди GitHub
+    - cron: "14,44 * * * *"   # Непиковые интервалы (14-я и 44-я минута, строго раз в 30 минут со сдвигом)
   workflow_dispatch:
+
+concurrency:
+  group: mesh-runner-24-7
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -81,5 +85,6 @@ jobs:
             echo "Супер-Память синхронизирована (без изменений)"
           else
             git commit -m "mesh: синхронизация Супер-Памяти и отчетов [skip ci]"
+            git pull --rebase origin main || true
             git push origin main || git push
           fi
