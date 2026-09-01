@@ -1,0 +1,8 @@
+[package]
+name = "vetto-shims"
+version = "0.2.16"
+edition = "2021"
+
+[dependencies]
+vetto-core = { path = "../vetto-core" }
+thiserror = "1"

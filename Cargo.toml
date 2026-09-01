@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "crates/vetto-core",
+    "crates/vetto-shims",
+    "crates/vetto-cli"
+]
+resolver = "2"

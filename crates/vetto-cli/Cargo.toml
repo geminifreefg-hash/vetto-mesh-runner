@@ -1,0 +1,9 @@
+[package]
+name = "vetto-cli"
+version = "0.2.16"
+edition = "2021"
+
+[dependencies]
+vetto-core = { path = "../vetto-core" }
+vetto-shims = { path = "../vetto-shims" }
+clap = { version = "4", features = ["derive"] }
