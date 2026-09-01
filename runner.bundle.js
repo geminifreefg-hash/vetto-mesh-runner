@@ -319,7 +319,7 @@ export function normalizeLeadUrl(url) {
   try { clean = decodeURIComponent(clean); } catch {}
   const withoutQuery = clean.split("?")[0] || "";
   clean = withoutQuery.split("#")[0] || "";
-  clean = clean.replace(//+/g, "/").replace(//+$/, "");
+  clean = clean.replace(/\/+/g, "/").replace(/\/+$/, "");
   return clean;
 }
 
@@ -958,9 +958,11 @@ export async function runPhase2Outreach(memory, dryRun = true) {
   log("ФАЗА 2", "COMPOUND-MINI (Groq LPU)", "Поиск свежих issues и триаж тредов...");
   const searchQueries = [
     "landlock sandbox language:rust",
-    ""claude code" sandbox",
+    "\"claude code\" sandbox",
     "agent linux sandbox seccomp",
-    "coding agent sandbox security"
+    "coding agent sandbox security",
+    "claude desktop sandbox linux",
+    "ai agent command execution security"
   ];
   const selectedQuery = searchQueries[Math.floor(Math.random() * searchQueries.length)];
 
