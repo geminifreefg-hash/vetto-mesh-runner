@@ -1,5 +1,6 @@
 {
   "version": "0.2.16",
+  "executionMode": "LEAD_HUNTER_ONLY",
   "lastUpdated": "2026-09-01T12:36:04.000Z",
   "projectIdentity": {
     "name": "VETTO",

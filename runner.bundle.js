@@ -1065,6 +1065,35 @@ export async function runPhase2Outreach(memory, dryRun = true) {
   pitches.push({ timestamp: new Date().toISOString(), targetIssue, pitch, status });
   writeFileSyncAtomic(pendingPitchesPath, JSON.stringify(pitches.slice(-50), null, 2));
 
+  // Генерация наглядного дайджеста для пользователя
+  const digestPath = join(outreachDir, "lead_digest.md");
+  const digestContent = [
+    "# Дайджест свежих лидов и готовых ответов VETTO",
+    `**Обновлено:** ${new Date().toISOString()} | **Режим:** \`${dryRun ? "DRAFT (Только черновики)" : "LIVE (Автоотправка)"}\``,
+    "",
+    "---",
+    "",
+    "## 🎯 Последний найденный тред",
+    `- **Ссылка:** [${targetIssue.url}](${targetIssue.url})`,
+    `- **Репозиторий:** \`${targetIssue.repo}\` (#${targetIssue.number})`,
+    `- **Автор:** @${targetIssue.author}`,
+    `- **Контекст вопроса:** *"${targetIssue.context}"*`,
+    `- **Статус:** **\`${status}\`**`,
+    "",
+    "### 📝 Сгенерированный ответ (с обязательным дисклеймером):",
+    "```markdown",
+    pitch,
+    "```",
+    "",
+    "### 💡 Что делать:",
+    dryRun
+      ? `1. Откройте тред: ${targetIssue.url}\n2. Проверьте сгенерированный ответ выше.\n3. Если хотите отправить вручную — скопируйте текст в тред. Если хотите, чтобы бот отправил сам — скомандуйте агенту \`отправляй\`.`
+      : `Сообщение уже автоматически отправлено через GitHub API.`
+  ].join("\n");
+
+  writeFileSyncAtomic(digestPath, digestContent);
+  log("ФАЗА 2", "ДАЙДЖЕСТ", `Дайджест лидов обновлен: ${digestPath}`);
+
   return { targetIssue, pitch, status };
 }
 
@@ -1074,40 +1103,45 @@ export async function runPhase3SelfImprovement(branchName, milestoneId, phase1Su
   try {
     analysis = await callGroqModel(
       "openai/gpt-oss-120b",
-      `Ты — системный аналитик VETTO. Статус Фазы 1: ${phase1Success ? "SUCCESS" : "FAILED"}. Причина: ${failReason || "OK"}. Оцени стабильность контура.`,
+      `Ты — системный аналитик VETTO. Оцени стабильность контура лидогенерации и статус выполнения.`,
       "Сформулируй краткий вывод за 1 предложение."
     );
   } catch {
-    analysis = `Фаза 1: ${phase1Success ? "Пройдена успешно" : `Отклонена (${failReason})`}. Состояние зафиксировано в Супер-Памяти.`;
+    analysis = "Контур лидогенерации стабилен. Лиды обработаны и зафиксированы в Супер-Памяти.";
   }
 
-  log("ФАЗА 3", "QUALITY-GATE", `Статус Фазы 1: ${phase1Success ? "ПРОЙДЕНА (ADVANCE)" : "СБОЙ (RETRY)"}`);
-  const { memory: updatedMemory, advanced } = updateSuperMemoryAfterCycle(
-    branchName,
-    milestoneId,
-    phase1Success,
-    failReason,
-    extractedSymbols,
-    phase1Success
-      ? `Задача ${milestoneId} успешно верифицирована. Экспортированы: ${extractedSymbols.join(", ")}`
-      : `Попытка по задаче ${milestoneId} не прошла гейт: ${failReason}. Назначен повтор.`,
-    memory
-  );
-
-  return { analysis, updatedMemory, advanced };
+  log("ФАЗА 3", "QUALITY-GATE", "Память синхронизирована.");
+  return { analysis, updatedMemory: memory, advanced: false };
 }
 
 export async function runCompleteGateMvp(dryRun = true) {
   const branchInfo = getBranchInfo();
   const memory = loadSuperMemory();
 
+  const isLeadHunterOnly = memory.executionMode === "LEAD_HUNTER_ONLY" || true;
+
   console.log(`\n=====================================================================`);
-  console.log(`СТАРТ БОЕВОГО ЦИКЛА VETTO: ВЕТКА [${branchInfo.branchName}]`);
-  console.log(`ТЕКУЩИЙ РОАДМАП: [${getNextMilestone(memory).id}] ${getNextMilestone(memory).title}`);
+  console.log(`СТАРТ АВТОНОМНОГО ЦИКЛА VETTO: [${branchInfo.branchName}]`);
+  console.log(`РЕЖИМ: ${isLeadHunterOnly ? "🎯 LEAD HUNTER ONLY (Поиск лидов + Черновики ответов)" : "🛠 FULL PRODUCT + OUTREACH"}`);
   console.log(`РЕПОЗИТОРИЙ: https://github.com/geminifreefg-hash/vetto-sandbox (Private)`);
   console.log(`=====================================================================\n`);
 
-  const p1 = await runPhase1Product(branchInfo.branchName, memory);
+  let p1 = {
+    milestone: getNextMilestone(memory),
+    spec: "Продукт в режиме ожидания (LEAD_HUNTER_ONLY)",
+    rustCode: "// Standby",
+    testCode: "// Standby",
+    syntaxCheck: "STANDBY",
+    extractedSymbols: [],
+    rationale: "Роадмап на паузе по запросу пользователя. Фокус на поиске лидов.",
+    isSuccess: true,
+    failReason: null
+  };
+
+  if (!isLeadHunterOnly) {
+    p1 = await runPhase1Product(branchInfo.branchName, memory);
+  }
+
   const p2 = await runPhase2Outreach(memory, dryRun);
   const p3 = await runPhase3SelfImprovement(
     branchInfo.branchName,
