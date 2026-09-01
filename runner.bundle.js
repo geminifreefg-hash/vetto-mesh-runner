@@ -45,8 +45,10 @@ export class BlacklistFilter {
         }
       }
       if (!foundPath) {
-        this.failClosed = true;
-        this.loadError = `Стоп-лист не найден: ${candidatePaths.join(", ")}`;
+        if (this.entries.length === 0) {
+          this.failClosed = true;
+          this.loadError = `Стоп-лист не найден: ${candidatePaths.join(", ")}`;
+        }
       } else {
         try {
           const content = readFileSync(foundPath, "utf8");
