@@ -385,25 +385,64 @@ async function callBaiModel(model, systemPrompt, userPrompt, maxTokens = 800) {
   return "// Safe architectural fallback";
 }
 
-async function callCodestral(systemPrompt, userPrompt, maxTokens = 1500) {
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+
+async function callOpenRouterModel(model, systemPrompt, userPrompt, maxTokens = 1500) {
+  if (!OPENROUTER_KEY) return null;
   try {
-    const res = await fetch(NVIDIA_ENDPOINT, {
+    const res = await fetch(OPENROUTER_ENDPOINT, {
       method: "POST",
-      headers: { "Authorization": `Bearer ${NVIDIA_KEY}`, "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${OPENROUTER_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "mistralai/codestral-22b-instruct-v0.1",
+        model,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
         max_tokens: maxTokens,
         temperature: 0.1
       }),
-      signal: AbortSignal.timeout(30000)
+      signal: AbortSignal.timeout(35000)
     });
     const raw = await res.text();
     let d; try { d = JSON.parse(raw); } catch { d = null; }
-    if (res.ok && d?.choices?.[0]?.message) {
-      return (d.choices[0].message.content || "").trim();
+    if (res.ok && d?.choices?.[0]?.message?.content) {
+      return d.choices[0].message.content.trim();
     }
   } catch {}
+  return null;
+}
+
+async function callCodestral(systemPrompt, userPrompt, maxTokens = 1500) {
+  // 1. NVIDIA NIM Codestral
+  if (NVIDIA_KEY) {
+    try {
+      const res = await fetch(NVIDIA_ENDPOINT, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${NVIDIA_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "mistralai/codestral-22b-instruct-v0.1",
+          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+          max_tokens: maxTokens,
+          temperature: 0.1
+        }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const raw = await res.text();
+      let d; try { d = JSON.parse(raw); } catch { d = null; }
+      if (res.ok && d?.choices?.[0]?.message?.content) {
+        return d.choices[0].message.content.trim();
+      }
+    } catch {}
+  }
+
+  // 2. OpenRouter Codestral / Qwen-Coder
+  const orRes = await callOpenRouterModel("mistralai/codestral-22b-instruct-v0.1", systemPrompt, userPrompt, maxTokens) ||
+                await callOpenRouterModel("qwen/qwen-2.5-coder-32b-instruct", systemPrompt, userPrompt, maxTokens);
+  if (orRes) return orRes;
+
+  // 3. b.ai DeepSeek-V4 / GLM-5.3
+  const baiRes = await callBaiModel("deepseek-v4-flash", systemPrompt, userPrompt, maxTokens);
+  if (baiRes && !baiRes.includes("Safe architectural fallback")) return baiRes;
+
   return "// Fallback Rust module implementation";
 }
 
