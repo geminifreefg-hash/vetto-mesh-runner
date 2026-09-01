@@ -20,18 +20,11 @@ mkdirSync(manifestsDir, { recursive: true });
 mkdirSync(completedDir, { recursive: true });
 mkdirSync(dataDir, { recursive: true });
 
-function log(msg: string) {
+function log(msg) {
   console.log(`[${new Date().toISOString()}] [VETTO-MESH] ${msg}`);
 }
 
-interface MeshMemory {
-  totalRuns: number;
-  lastRunAt: string;
-  processedTasks: string[];
-  activeDepartments: string[];
-}
-
-function loadMemory(): MeshMemory {
+function loadMemory() {
   if (existsSync(memoryFile)) {
     try {
       return JSON.parse(readFileSync(memoryFile, "utf8"));
@@ -56,7 +49,7 @@ function loadMemory(): MeshMemory {
   };
 }
 
-function saveMemory(mem: MeshMemory) {
+function saveMemory(mem) {
   writeFileSync(memoryFile, JSON.stringify(mem, null, 2), "utf8");
 }
 
@@ -70,7 +63,7 @@ async function runMeshCycle() {
   const manifests = existsSync(manifestsDir) ? readdirSync(manifestsDir).filter(f => f.endsWith(".json") || f.endsWith(".md")) : [];
   log(`Фаза 1: Обнаружено манифестов в очереди: ${manifests.length}`);
 
-  // Если очереди пуста — Верховный Совет генерирует плановые задачи для 8 отделов
+  // Если очередь пуста — Верховный Совет формирует периодические задачи отделов
   if (manifests.length === 0) {
     log("Фаза 1: Верховный Совет формирует периодические задачи отделов...");
     const tickId = `tick_${Date.now()}`;
@@ -113,7 +106,7 @@ async function runMeshCycle() {
       writeFileSync(completedPath, JSON.stringify(resultData, null, 2), "utf8");
       
       memory.processedTasks.push(manifestFile);
-    } catch (err: any) {
+    } catch (err) {
       log(`Ошибка обработки ${manifestFile}: ${err?.message || err}`);
     }
   }
