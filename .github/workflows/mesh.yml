@@ -1,0 +1,40 @@
+name: mesh-runner-24-7
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # Автоматический запуск каждые 30 минут 24/7
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-mesh-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Запуск автономного раннера
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node runner.bundle.js
+
+      - name: Синхронизация состояния и памяти
+        run: |
+          git config user.name "vetto-mesh-bot"
+          git config user.email "bot@vetto-mesh.local"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Нет новых данных для сохранения"
+          else
+            git commit -m "mesh: синхронизация состояния и памяти [skip ci]"
+            git push
+          fi

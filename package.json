@@ -1,0 +1,9 @@
+{
+  "name": "vetto-mesh-runner",
+  "version": "0.2.9",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node runner.bundle.js"
+  }
+}
