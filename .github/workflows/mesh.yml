@@ -2,7 +2,7 @@ name: mesh-runner-24-7
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # Автоматический запуск каждые 30 минут 24/7
+    - cron: "7,22,37,52 * * * *"   # Непиковые интервалы каждые 15 минут для обхода очереди GitHub
   workflow_dispatch:
 
 permissions:
