@@ -58,5 +58,17 @@
     },
     "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\nHi @dev_sec_ops, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.",
     "status": "BLOCKED_BLACKLIST"
+  },
+  {
+    "timestamp": "2026-09-01T15:07:15.822Z",
+    "targetIssue": {
+      "url": "https://github.com/anthropics/claude-code/issues/1420",
+      "repo": "anthropics/claude-code",
+      "number": 1420,
+      "author": "dev_sec_ops",
+      "context": "How to restrict Claude Code filesystem access without heavy Docker containers?"
+    },
+    "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\nHi @dev_sec_ops, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.",
+    "status": "BLOCKED_BLACKLIST"
   }
 ]
