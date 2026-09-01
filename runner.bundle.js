@@ -1039,6 +1039,7 @@ export async function runPhase2Outreach(memory, dryRun = true) {
     markLeadAsProcessed(memory, targetIssue.url);
   } else if (GH_TOKEN) {
     try {
+      log("ФАЗА 2", "GITHUB API POST", `Публикация ответа в ${targetIssue.repo}#${targetIssue.number}...`);
       const commentRes = await fetch(`https://api.github.com/repos/${targetIssue.repo}/issues/${targetIssue.number}/comments`, {
         method: "POST",
         headers: {
@@ -1047,13 +1048,21 @@ export async function runPhase2Outreach(memory, dryRun = true) {
           "User-Agent": "vetto-lead-hunter-24-7",
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ body: pitch }),
+        body: JSON.stringify({ body: cleanPitch }),
         signal: AbortSignal.timeout(15000)
       });
-      status = commentRes.ok ? "POSTED" : "POST_FAILED";
+      if (commentRes.ok) {
+        status = "POSTED";
+        log("ФАЗА 2", "SUCCESS", `Сообщение успешно опубликовано в ${targetIssue.url}!`);
+      } else {
+        const errTxt = await commentRes.text();
+        status = `POST_FAILED_${commentRes.status}`;
+        log("ФАЗА 2", "POST ERROR", `GitHub API вернул статус ${commentRes.status}: ${errTxt.slice(0, 150)}`);
+      }
       markLeadAsProcessed(memory, targetIssue.url);
-    } catch {
+    } catch (err) {
       status = "POST_ERROR";
+      log("ФАЗА 2", "NETWORK ERROR", `Сетевой сбой при отправке: ${err instanceof Error ? err.message : String(err)}`);
     }
   } else {
     status = "SKIPPED_NO_TOKEN";

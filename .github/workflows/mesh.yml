@@ -21,7 +21,6 @@ jobs:
         with:
           node-version: 22
 
-      # Устанавливаем Rust для облачного тестирования сгенерированного кода
       - name: Установка Rust toolchain в облаке
         uses: dtolnay/rust-toolchain@stable
 
@@ -35,8 +34,9 @@ jobs:
           OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_ENDPOINT: ${{ secrets.OPENROUTER_ENDPOINT || 'https://openrouter.ai/api/v1/chat/completions' }}
         run: |
-          node runner.bundle.js
+          node runner.bundle.js --live
 
       - name: Синхронизация физических файлов Rust, проверка тестов и пуш ветки day_X:Y
         env:
@@ -45,7 +45,6 @@ jobs:
           git config --global user.name "vetto-mesh-bot"
           git config --global user.email "bot@vetto-mesh.local"
           
-          # Получаем имя ветки из последнего отчета
           LATEST_REPORT=$(ls -t reports/mvp/*.md 2>/dev/null | head -n 1 || echo "")
           if [ -n "$LATEST_REPORT" ]; then
             BRANCH_RAW=$(basename "$LATEST_REPORT" .md)
@@ -57,11 +56,9 @@ jobs:
               cd sandbox_repo
               git checkout -b "$CLEAN_BRANCH_NAME" 2>/dev/null || git checkout "$CLEAN_BRANCH_NAME"
               
-              # Копируем отчет
               mkdir -p reports
               cp "../$LATEST_REPORT" "reports/$BRANCH_RAW.md"
               
-              # Копируем сгенерированные крейты и тесты
               if [ -d "../crates" ]; then
                 cp -r ../crates .
               fi
@@ -69,11 +66,9 @@ jobs:
                 cp -r ../tests .
               fi
               
-              # Запуск облачных тестов Cargo в ветке песочницы
               echo "=== ЗАПУСК ОБЛАЧНЫХ ТЕСТОВ CARGO CHECK & TEST ==="
               cargo check --tests || echo "Cargo check warning (logged to memory)"
 
-              # Коммит физического кода, тестов и отчета
               git add -A
               git commit -m "feat(agent): autonomous cycle $BRANCH_RAW with verified Rust core [skip ci]" || echo "No changes to sandbox"
               git push origin "$CLEAN_BRANCH_NAME" --force || echo "Sandbox push warning"
@@ -81,7 +76,6 @@ jobs:
             fi
           fi
 
-          # Сохраняем Супер-Память и состояние циклов в репозитории раннера
           git add data/ reports/
           if git diff --cached --quiet; then
             echo "Супер-Память синхронизирована (без изменений)"
@@ -89,4 +83,3 @@ jobs:
             git commit -m "mesh: синхронизация Супер-Памяти и отчетов [skip ci]"
             git push origin main || git push
           fi
-
