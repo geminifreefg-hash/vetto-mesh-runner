@@ -1,6 +1,6 @@
 {
   "version": "0.2.15",
-  "lastUpdated": "2026-09-01T12:25:48.333Z",
+  "lastUpdated": "2026-09-01T12:30:47.489Z",
   "projectIdentity": {
     "name": "VETTO",
     "coreMission": "Zero-overhead native Linux kernel sandboxing for AI coding agents (Claude Code, Codex, Aider)",
@@ -81,8 +81,8 @@
       "testFile": "crates/vetto-core/tests/test_abi_v5_scoping.rs",
       "description": "Изоляция сигналов ptrace и абстрактных unix сокетов для дочерних процессов агентов в Linux 6.12+",
       "status": "IN_PROGRESS",
-      "retryCount": 2,
-      "lastError": "Ошибка cargo check: \u001b[1m\u001b[91merror\u001b[0m: could not find `Cargo.toml` in `/home/runner/work/vetto-mesh-runner/vetto-mesh-runner` or any parent directory"
+      "retryCount": 3,
+      "lastError": "LPU валидатор отклонил код: FAIL: В предоставленном сообщении отсутствует сам Rust-код для проверки. Текст содержит только внутренние рассуждения/черновик ответа, но не содержит фактического исходного кода файла `abi_v5_scoping.rs`. Без кода невозможно проверить наличие `unwrap`, `panic!`, `expect`, небезопасных блоков (`unsafe`) или других уязвимых конструкций."
     },
     {
       "id": "M2_SHIM_CACHE_CONCURRENCY",
@@ -125,6 +125,7 @@
     "Nemotron-3 Ultra 550B MoE на OpenCode Zen дает глубочайший анализ monotonic restrictions ядра Linux.",
     "Codestral-22B от NVIDIA лидирует по точности FIM-генерации кода на Rust без паник.",
     "[day_1:2] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Сгенерирован пустой или fallback код. Назначен повтор.",
-    "[day_1:3] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Ошибка cargo check: \u001b[1m\u001b[91merror\u001b[0m: could not find `Cargo.toml` in `/home/runner/work/vetto-mesh-runner/vetto-mesh-runner` or any parent directory. Назначен повтор."
+    "[day_1:3] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Ошибка cargo check: \u001b[1m\u001b[91merror\u001b[0m: could not find `Cargo.toml` in `/home/runner/work/vetto-mesh-runner/vetto-mesh-runner` or any parent directory. Назначен повтор.",
+    "[day_1:4] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: LPU валидатор отклонил код: FAIL: В предоставленном сообщении отсутствует сам Rust-код для проверки. Текст содержит только внутренние рассуждения/черновик ответа, но не содержит фактического исходного кода файла `abi_v5_scoping.rs`. Без кода невозможно проверить наличие `unwrap`, `panic!`, `expect`, небезопасных блоков (`unsafe`) или других уязвимых конструкций.. Назначен повтор."
   ]
 }
