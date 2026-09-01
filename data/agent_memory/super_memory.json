@@ -1,0 +1,128 @@
+{
+  "version": "0.2.15",
+  "lastUpdated": "2026-09-01T12:04:08.986Z",
+  "projectIdentity": {
+    "name": "VETTO",
+    "coreMission": "Zero-overhead native Linux kernel sandboxing for AI coding agents (Claude Code, Codex, Aider)",
+    "securityLevel": "Kernel-enforced unprivileged isolation (Zero-Root / Zero-Daemon)",
+    "kernelTarget": "Linux 5.13+ (Landlock ABI v1-v5) + seccomp-bpf"
+  },
+  "architecturalRules": {
+    "bannedPatterns": [
+      "unwrap()",
+      "expect()",
+      "panic!()",
+      "todo!()",
+      "unimplemented!()",
+      "unsafe blocks without safety comments",
+      "direct println! in library crates"
+    ],
+    "mandatoryPatterns": [
+      "Result<T, VettoError> on all fallible operations",
+      "prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) before Landlock ruleset activation",
+      "#[cfg(test)] unit tests in every module",
+      "Landlock ABI feature detection before rule creation",
+      "Non-blocking FD handling with close-on-exec (O_CLOEXEC)"
+    ],
+    "errorHandling": "Strict domain enums (VettoError) with std::fmt::Display and std::error::Error implementation"
+  },
+  "codebaseRegistry": {
+    "crates": {
+      "crates/vetto-core": {
+        "purpose": "Низкоуровневая изоляция ядра Linux (Landlock ABI v1-v5, seccomp BPF, namespaces)",
+        "files": [
+          "src/lib.rs",
+          "src/landlock/ruleset.rs",
+          "src/landlock/abi_v5.rs",
+          "src/seccomp/bpf.rs",
+          "src/error.rs"
+        ],
+        "exportedSymbols": [
+          "VettoSandbox",
+          "VettoScopedRuleset",
+          "LandlockAbiVersion",
+          "VettoError",
+          "apply_landlock_scoped"
+        ]
+      },
+      "crates/vetto-shims": {
+        "purpose": "PATH-шимы и перехват опасных shell-вызовов (rm -rf, git push --force, curl | sh)",
+        "files": [
+          "src/lib.rs",
+          "src/interceptor.rs",
+          "src/cache.rs"
+        ],
+        "exportedSymbols": [
+          "ShimCache",
+          "sanitize_agent_exec_args",
+          "is_command_safe"
+        ]
+      },
+      "crates/vetto-cli": {
+        "purpose": "CLI-интерфейс (vetto run, vetto wrap, vetto audit)",
+        "files": [
+          "src/main.rs",
+          "src/cli/args.rs"
+        ],
+        "exportedSymbols": [
+          "CliCommand",
+          "execute_sandboxed_run"
+        ]
+      }
+    }
+  },
+  "roadmapMilestones": [
+    {
+      "id": "M1_LANDLOCK_ABI5_SCOPING",
+      "priority": 1,
+      "title": "Landlock ABI v5 Scoping (Signals & UNIX Sockets)",
+      "targetCrate": "crates/vetto-core",
+      "targetFile": "crates/vetto-core/src/landlock/abi_v5_scoping.rs",
+      "testFile": "crates/vetto-core/tests/test_abi_v5_scoping.rs",
+      "description": "Изоляция сигналов ptrace и абстрактных unix сокетов для дочерних процессов агентов в Linux 6.12+",
+      "status": "IN_PROGRESS",
+      "retryCount": 1,
+      "lastError": "Сгенерирован пустой или fallback код"
+    },
+    {
+      "id": "M2_SHIM_CACHE_CONCURRENCY",
+      "priority": 2,
+      "title": "Thread-Safe PATH Shim Cache with RwLock",
+      "targetCrate": "crates/vetto-shims",
+      "targetFile": "crates/vetto-shims/src/cache.rs",
+      "testFile": "crates/vetto-shims/tests/test_cache.rs",
+      "description": "Потокобезопасный кэш разрешенных бинарников для нулевой задержки перехвата вызовов агента",
+      "status": "PENDING",
+      "retryCount": 0
+    },
+    {
+      "id": "M3_SECCOMP_SYSCALL_GUARD",
+      "priority": 3,
+      "title": "Seccomp BPF Deny-List Filter for Agent Escapes",
+      "targetCrate": "crates/vetto-core",
+      "targetFile": "crates/vetto-core/src/seccomp/bpf_guard.rs",
+      "testFile": "crates/vetto-core/tests/test_seccomp_bpf.rs",
+      "description": "Запрет сисколов mount, ptrace, unshare, keyctl с действием SECCOMP_RET_KILL",
+      "status": "PENDING",
+      "retryCount": 0
+    },
+    {
+      "id": "M4_NETWORK_PORT_ISOLATION",
+      "priority": 4,
+      "title": "Landlock ABI v4 TCP Port Binding Isolation",
+      "targetCrate": "crates/vetto-core",
+      "targetFile": "crates/vetto-core/src/landlock/net_guard.rs",
+      "testFile": "crates/vetto-core/tests/test_net_guard.rs",
+      "description": "Блокировка неавторизованных исходящих сокетов и привязок к портам (LANDLOCK_RULE_NET_PORT)",
+      "status": "PENDING",
+      "retryCount": 0
+    }
+  ],
+  "lessonsLearned": [
+    "b.ai шлюз требует Concurrency Pool N=2-3 со сглаживанием 500 мс во избежание сброса сокетов.",
+    "Groq LPU идеален для пре-валидации синтаксиса Rust и триажа лидов (45-150 мс).",
+    "Nemotron-3 Ultra 550B MoE на OpenCode Zen дает глубочайший анализ monotonic restrictions ядра Linux.",
+    "Codestral-22B от NVIDIA лидирует по точности FIM-генерации кода на Rust без паник.",
+    "[day_1:1] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Сгенерирован пустой или fallback код. Назначен повтор."
+  ]
+}
