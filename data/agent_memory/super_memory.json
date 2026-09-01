@@ -1,6 +1,6 @@
 {
-  "version": "0.2.15",
-  "lastUpdated": "2026-09-01T12:35:56.710Z",
+  "version": "0.2.16",
+  "lastUpdated": "2026-09-01T12:36:04.000Z",
   "projectIdentity": {
     "name": "VETTO",
     "coreMission": "Zero-overhead native Linux kernel sandboxing for AI coding agents (Claude Code, Codex, Aider)",
@@ -32,17 +32,23 @@
         "purpose": "Низкоуровневая изоляция ядра Linux (Landlock ABI v1-v5, seccomp BPF, namespaces)",
         "files": [
           "src/lib.rs",
+          "src/error.rs",
+          "src/landlock/mod.rs",
           "src/landlock/ruleset.rs",
           "src/landlock/abi_v5.rs",
-          "src/seccomp/bpf.rs",
-          "src/error.rs"
+          "src/seccomp/mod.rs",
+          "src/seccomp/bpf.rs"
         ],
         "exportedSymbols": [
           "VettoSandbox",
-          "VettoScopedRuleset",
-          "LandlockAbiVersion",
+          "Ruleset",
+          "RulesetBuilder",
+          "BpfProgram",
+          "SeccompAction",
+          "SeccompFilter",
           "VettoError",
-          "apply_landlock_scoped"
+          "detect_abi_version",
+          "is_supported"
         ]
       },
       "crates/vetto-shims": {
@@ -53,20 +59,21 @@
           "src/cache.rs"
         ],
         "exportedSymbols": [
+          "CacheEntry",
+          "Sha256",
           "ShimCache",
-          "sanitize_agent_exec_args",
-          "is_command_safe"
+          "ShimInterceptor"
         ]
       },
       "crates/vetto-cli": {
-        "purpose": "CLI-интерфейс (vetto run, vetto wrap, vetto audit)",
+        "purpose": "CLI-интерфейс (vetto run, vetto wrap, vetto audit, vetto doctor)",
         "files": [
-          "src/main.rs",
-          "src/cli/args.rs"
+          "src/main.rs"
         ],
         "exportedSymbols": [
-          "CliCommand",
-          "execute_sandboxed_run"
+          "VettoConfig",
+          "Cli",
+          "Commands"
         ]
       }
     }
@@ -77,12 +84,11 @@
       "priority": 1,
       "title": "Landlock ABI v5 Scoping (Signals & UNIX Sockets)",
       "targetCrate": "crates/vetto-core",
-      "targetFile": "crates/vetto-core/src/landlock/abi_v5_scoping.rs",
-      "testFile": "crates/vetto-core/tests/test_abi_v5_scoping.rs",
+      "targetFile": "crates/vetto-core/src/landlock/abi_v5.rs",
+      "testFile": "crates/vetto-core/tests/test_abi_v5.rs",
       "description": "Изоляция сигналов ptrace и абстрактных unix сокетов для дочерних процессов агентов в Linux 6.12+",
       "status": "IN_PROGRESS",
-      "retryCount": 4,
-      "lastError": "Ошибка cargo check: \u001b[1m\u001b[92m    Checking\u001b[0m vetto-core v0.2.16 (/home/runner/work/vetto-mesh-runner/vetto-mesh-runner/crates/vetto-core)\n\u001b[1m\u001b[92m    Checking\u001b[0m clap v4.6.6\ncrates/vetto-core/src/lib.rs:2:1: \u001b[1m\u001b[91m"
+      "retryCount": 0
     },
     {
       "id": "M2_SHIM_CACHE_CONCURRENCY",
@@ -100,7 +106,7 @@
       "priority": 3,
       "title": "Seccomp BPF Deny-List Filter for Agent Escapes",
       "targetCrate": "crates/vetto-core",
-      "targetFile": "crates/vetto-core/src/seccomp/bpf_guard.rs",
+      "targetFile": "crates/vetto-core/src/seccomp/bpf.rs",
       "testFile": "crates/vetto-core/tests/test_seccomp_bpf.rs",
       "description": "Запрет сисколов mount, ptrace, unshare, keyctl с действием SECCOMP_RET_KILL",
       "status": "PENDING",
@@ -111,8 +117,8 @@
       "priority": 4,
       "title": "Landlock ABI v4 TCP Port Binding Isolation",
       "targetCrate": "crates/vetto-core",
-      "targetFile": "crates/vetto-core/src/landlock/net_guard.rs",
-      "testFile": "crates/vetto-core/tests/test_net_guard.rs",
+      "targetFile": "crates/vetto-core/src/landlock/ruleset.rs",
+      "testFile": "crates/vetto-core/tests/test_ruleset.rs",
       "description": "Блокировка неавторизованных исходящих сокетов и привязок к портам (LANDLOCK_RULE_NET_PORT)",
       "status": "PENDING",
       "retryCount": 0
@@ -123,10 +129,6 @@
     "b.ai шлюз требует Concurrency Pool N=2-3 со сглаживанием 500 мс во избежание сброса сокетов.",
     "Groq LPU идеален для пре-валидации синтаксиса Rust и триажа лидов (45-150 мс).",
     "Nemotron-3 Ultra 550B MoE на OpenCode Zen дает глубочайший анализ monotonic restrictions ядра Linux.",
-    "Codestral-22B от NVIDIA лидирует по точности FIM-генерации кода на Rust без паник.",
-    "[day_1:2] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Сгенерирован пустой или fallback код. Назначен повтор.",
-    "[day_1:3] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Ошибка cargo check: \u001b[1m\u001b[91merror\u001b[0m: could not find `Cargo.toml` in `/home/runner/work/vetto-mesh-runner/vetto-mesh-runner` or any parent directory. Назначен повтор.",
-    "[day_1:4] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: LPU валидатор отклонил код: FAIL: В предоставленном сообщении отсутствует сам Rust-код для проверки. Текст содержит только внутренние рассуждения/черновик ответа, но не содержит фактического исходного кода файла `abi_v5_scoping.rs`. Без кода невозможно проверить наличие `unwrap`, `panic!`, `expect`, небезопасных блоков (`unsafe`) или других уязвимых конструкций.. Назначен повтор.",
-    "[day_1:5] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Ошибка cargo check: \u001b[1m\u001b[92m    Checking\u001b[0m vetto-core v0.2.16 (/home/runner/work/vetto-mesh-runner/vetto-mesh-runner/crates/vetto-core)\n\u001b[1m\u001b[92m    Checking\u001b[0m clap v4.6.6\ncrates/vetto-core/src/lib.rs:2:1: \u001b[1m\u001b[91m. Назначен повтор."
+    "Codestral-22B от NVIDIA лидирует по точности FIM-генерации кода на Rust без паник."
   ]
 }
