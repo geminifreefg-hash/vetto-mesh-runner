@@ -1,7 +1,7 @@
 {
   "version": "0.2.16",
   "executionMode": "LEAD_HUNTER_ONLY",
-  "lastUpdated": "2026-09-01T15:21:46.037Z",
+  "lastUpdated": "2026-09-01T15:58:13.506Z",
   "projectIdentity": {
     "name": "VETTO",
     "coreMission": "Zero-overhead native Linux kernel sandboxing for AI coding agents (Claude Code, Codex, Aider)",
@@ -126,7 +126,9 @@
     }
   ],
   "processedLeads": [
-    "https://github.com/AlexanderMattTurner/agent-glovebox/issues/5402"
+    "https://github.com/AlexanderMattTurner/agent-glovebox/issues/5402",
+    "https://github.com/D22977/gpt-browser-bridge/issues/43",
+    "https://github.com/StrobiSoft/Babylon/issues/40"
   ],
   "lessonsLearned": [
     "b.ai шлюз требует Concurrency Pool N=2-3 со сглаживанием 500 мс во избежание сброса сокетов.",

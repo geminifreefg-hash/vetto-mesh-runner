@@ -82,5 +82,29 @@
     },
     "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\nHi @alexander-turner, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.",
     "status": "POSTED"
+  },
+  {
+    "timestamp": "2026-09-01T15:58:13.507Z",
+    "targetIssue": {
+      "url": "https://github.com/D22977/gpt-browser-bridge/issues/43",
+      "repo": "D22977/gpt-browser-bridge",
+      "number": 43,
+      "author": "D22977",
+      "context": "[ADR][CURRENT START HERE → 5361325221] Current execution architecture + history: # Mail-man retirement architecture v5 — CANDIDATE\n\n## Decision status\n`CANDIDATE — NOT YET FROZEN`\n\nThis ADR supersedes Issue #26 **as the current planning baseline only**. Issue #26 and all prior receipts remain historical authority for work already executed under them.\n\nThe purpose of v5 is to sim"
+    },
+    "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\nHi @D22977, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.",
+    "status": "POSTED"
+  },
+  {
+    "timestamp": "2026-09-01T15:58:13.507Z",
+    "targetIssue": {
+      "url": "https://github.com/StrobiSoft/Babylon/issues/40",
+      "repo": "StrobiSoft/Babylon",
+      "number": 40,
+      "author": "StrobiSoft",
+      "context": "[NOEMI-BRIDGE v0.1] Dedicated task queue: Dedicated, audit-friendly task queue for the NOEMI BRIDGE worker on CT105.\n\nThis issue is not a continuity record. Babylon issue #38 remains reserved for NOEMI-CLONE continuity documentation.\n\nAccepted task marker:\n\nNOEMI-BRIDGE/TASK v1\n\nAccepted result marker:\n\nNOEMI-BRIDGE/RESULT v1\n\nOnly structur"
+    },
+    "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\nHi @StrobiSoft, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.",
+    "status": "POSTED"
   }
 ]

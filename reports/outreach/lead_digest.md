@@ -1,21 +1,50 @@
 # Дайджест свежих лидов и готовых ответов VETTO
-**Обновлено:** 2026-09-01T15:21:46.037Z | **Режим:** `LIVE (Автоотправка)`
+**Обновлено:** 2026-09-01T15:58:13.508Z | **Режим:** `LIVE (Автоотправка)`
+**Обработано в текущем пакете:** `2` | **Таблица лидов:** `reports/outreach/leads_pipeline.csv`
 
 ---
 
-## 🎯 Последний найденный тред
-- **Ссылка:** [https://github.com/AlexanderMattTurner/agent-glovebox/issues/5402](https://github.com/AlexanderMattTurner/agent-glovebox/issues/5402)
-- **Репозиторий:** `AlexanderMattTurner/agent-glovebox` (#5402)
-- **Автор:** @alexander-turner
-- **Контекст вопроса:** *"Kata migration plan: move the sbx backend to Kata Containers: glovebox boots its coding-agent sandbox as a microVM through the `sbx` CLI. This issue is the multi-PR migration checklist for replacing that backend with Kata Containers, run through containerd, with upstream Cloud Hypervisor as the working VMM default. The Phase-0 verification record `docs/kata-ve"*
-- **Статус:** **`POSTED`**
+## 🎯 Лид #1: [D22977/gpt-browser-bridge#43](https://github.com/D22977/gpt-browser-bridge/issues/43)
+- **Автор:** @D22977
+- **Контекст вопроса:** *"[ADR][CURRENT START HERE → 5361325221] Current execution architecture + history: # Mail-man retirement architecture v5 — CANDIDATE
 
-### 📝 Сгенерированный ответ (с обязательным дисклеймером):
+## Decision status
+`CANDIDATE — NOT YET FROZEN`
+
+This ADR supersedes Issue #26 **as the current planning baseline only**. Issue #26 and all prior receipts remain historical authority for work already executed under them.
+
+The purpose of v5 is to sim"*
+- **Статус отправки:** **`POSTED`**
+
+### 📝 Текст ответа:
 ```markdown
 Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)
 
-Hi @alexander-turner, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.
+Hi @D22977, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.
 ```
 
-### 💡 Что делать:
-Сообщение уже автоматически отправлено через GitHub API.
+---
+
+## 🎯 Лид #2: [StrobiSoft/Babylon#40](https://github.com/StrobiSoft/Babylon/issues/40)
+- **Автор:** @StrobiSoft
+- **Контекст вопроса:** *"[NOEMI-BRIDGE v0.1] Dedicated task queue: Dedicated, audit-friendly task queue for the NOEMI BRIDGE worker on CT105.
+
+This issue is not a continuity record. Babylon issue #38 remains reserved for NOEMI-CLONE continuity documentation.
+
+Accepted task marker:
+
+NOEMI-BRIDGE/TASK v1
+
+Accepted result marker:
+
+NOEMI-BRIDGE/RESULT v1
+
+Only structur"*
+- **Статус отправки:** **`POSTED`**
+
+### 📝 Текст ответа:
+```markdown
+Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)
+
+Hi @StrobiSoft, for unprivileged filesystem isolation on Linux without Docker daemon overhead, native Landlock LSM allows unprivileged sandboxing directly in user space. VETTO wraps CLI agent execution with sub-millisecond overhead.
+```
