@@ -1,15 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-/**
- * VETTO СУПЕР-ПАМЯТЬ (SUPER-MEMORY ENGINE)
- * 
- * Назначение:
- * 1. Исключить генерацию случайного кода — Фаза 1 всегда знает ЧТО, ГДЕ, КАК и ЗАЧЕМ писать.
- * 2. Хранит полное дерево архитектуры VETTO, экспортированные символы, историю веток и роадмап.
- * 3. Фаза 3 (Оптимизатор) автоматически обогащает Супер-Память после каждого цикла.
- */
-
 export interface SuperMemoryState {
   version: string;
   lastUpdated: string;
@@ -39,9 +30,12 @@ export interface SuperMemoryState {
     targetFile: string;
     testFile: string;
     description: string;
-    status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+    retryCount: number;
+    lastError?: string;
     completedInBranch?: string;
   }>;
+  processedLeads: string[];
   lessonsLearned: string[];
 }
 
@@ -51,7 +45,7 @@ const memoryPath = join(memoryDir, "super_memory.json");
 mkdirSync(memoryDir, { recursive: true });
 
 const DEFAULT_SUPER_MEMORY: SuperMemoryState = {
-  version: "0.2.14",
+  version: "0.2.16",
   lastUpdated: new Date().toISOString(),
   projectIdentity: {
     name: "VETTO",
@@ -132,7 +126,8 @@ const DEFAULT_SUPER_MEMORY: SuperMemoryState = {
       targetFile: "crates/vetto-core/src/landlock/abi_v5_scoping.rs",
       testFile: "crates/vetto-core/tests/test_abi_v5_scoping.rs",
       description: "Изоляция сигналов ptrace и абстрактных unix сокетов для дочерних процессов агентов в Linux 6.12+",
-      status: "IN_PROGRESS"
+      status: "IN_PROGRESS",
+      retryCount: 0
     },
     {
       id: "M2_SHIM_CACHE_CONCURRENCY",
@@ -142,7 +137,8 @@ const DEFAULT_SUPER_MEMORY: SuperMemoryState = {
       targetFile: "crates/vetto-shims/src/cache.rs",
       testFile: "crates/vetto-shims/tests/test_cache.rs",
       description: "Потокобезопасный кэш разрешенных бинарников для нулевой задержки перехвата вызовов агента",
-      status: "PENDING"
+      status: "PENDING",
+      retryCount: 0
     },
     {
       id: "M3_SECCOMP_SYSCALL_GUARD",
@@ -152,7 +148,8 @@ const DEFAULT_SUPER_MEMORY: SuperMemoryState = {
       targetFile: "crates/vetto-core/src/seccomp/bpf_guard.rs",
       testFile: "crates/vetto-core/tests/test_seccomp_bpf.rs",
       description: "Запрет сисколов mount, ptrace, unshare, keyctl с действием SECCOMP_RET_KILL",
-      status: "PENDING"
+      status: "PENDING",
+      retryCount: 0
     },
     {
       id: "M4_NETWORK_PORT_ISOLATION",
@@ -162,9 +159,11 @@ const DEFAULT_SUPER_MEMORY: SuperMemoryState = {
       targetFile: "crates/vetto-core/src/landlock/net_guard.rs",
       testFile: "crates/vetto-core/tests/test_net_guard.rs",
       description: "Блокировка неавторизованных исходящих сокетов и привязок к портам (LANDLOCK_RULE_NET_PORT)",
-      status: "PENDING"
+      status: "PENDING",
+      retryCount: 0
     }
   ],
+  processedLeads: [],
   lessonsLearned: [
     "b.ai шлюз требует Concurrency Pool N=2-3 со сглаживанием 500 мс во избежание сброса сокетов.",
     "Groq LPU идеален для пре-валидации синтаксиса Rust и триажа лидов (45-150 мс).",
@@ -173,14 +172,36 @@ const DEFAULT_SUPER_MEMORY: SuperMemoryState = {
   ]
 };
 
+export function extractExportedRustSymbols(rustCode: string): string[] {
+  const symbols = new Set<string>();
+  const patterns = [
+    /pub\s+(?:async\s+)?fn\s+([a-zA-Z0-9_]+)/g,
+    /pub\s+struct\s+([a-zA-Z0-9_]+)/g,
+    /pub\s+enum\s+([a-zA-Z0-9_]+)/g,
+    /pub\s+trait\s+([a-zA-Z0-9_]+)/g,
+    /pub\s+type\s+([a-zA-Z0-9_]+)/g,
+    /pub\s+const\s+([a-zA-Z0-9_]+)/g
+  ];
+
+  for (const pat of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pat.exec(rustCode)) !== null) {
+      if (match[1]) symbols.add(match[1]);
+    }
+  }
+
+  return Array.from(symbols);
+}
+
 export function loadSuperMemory(): SuperMemoryState {
   if (existsSync(memoryPath)) {
     try {
       const data = JSON.parse(readFileSync(memoryPath, "utf8"));
+      if (!Array.isArray(data.processedLeads)) {
+        data.processedLeads = [];
+      }
       return data;
-    } catch {
-      // fallback
-    }
+    } catch {}
   }
   saveSuperMemory(DEFAULT_SUPER_MEMORY);
   return DEFAULT_SUPER_MEMORY;
@@ -191,70 +212,96 @@ export function saveSuperMemory(memory: SuperMemoryState): void {
   writeFileSync(memoryPath, JSON.stringify(memory, null, 2), "utf8");
 }
 
-/**
- * Получить текущую целевую задачу для Фазы 1 из Роадмапа Супер-Памяти
- */
 export function getNextMilestone(memory: SuperMemoryState) {
-  const active = memory.roadmapMilestones.find(m => m.status === "IN_PROGRESS") ||
-                 memory.roadmapMilestones.find(m => m.status === "PENDING") ||
-                 memory.roadmapMilestones[0];
-  return active;
+  return memory.roadmapMilestones.find(m => m.status === "IN_PROGRESS") ||
+         memory.roadmapMilestones.find(m => m.status === "PENDING") ||
+         memory.roadmapMilestones[0];
 }
 
-/**
- * Сформировать компактный архитектурный контекст Супер-Памяти для промптов
- */
+export function isLeadAlreadyProcessed(memory: SuperMemoryState, url: string): boolean {
+  if (!memory.processedLeads) memory.processedLeads = [];
+  const clean = url.trim().toLowerCase().replace(/\/+$/, "");
+  return memory.processedLeads.some(p => p.toLowerCase().replace(/\/+$/, "") === clean);
+}
+
+export function markLeadAsProcessed(memory: SuperMemoryState, url: string): void {
+  if (!memory.processedLeads) memory.processedLeads = [];
+  const clean = url.trim();
+  if (!isLeadAlreadyProcessed(memory, clean)) {
+    memory.processedLeads.push(clean);
+    if (memory.processedLeads.length > 200) {
+      memory.processedLeads.shift();
+    }
+  }
+}
+
 export function buildSuperMemoryPromptContext(memory: SuperMemoryState): string {
   const milestone = getNextMilestone(memory);
+  const retryInfo = milestone.retryCount > 0 
+    ? `\n⚠️ ВНИМАНИЕ: Предыдущая попытка не прошла гейт! Ошибка: ${milestone.lastError || "Неполный код"}. Исправь это в текущей итерации!` 
+    : "";
+
   return [
     `=== БАЗА ЗНАНИЙ И СУПЕР-ПАМЯТЬ VETTO (Версия ${memory.version}) ===`,
     `1. МИССИЯ: ${memory.projectIdentity.coreMission}`,
     `2. ЖЕСТКИЕ ПРАВИЛА КОДА: Запрещены: ${memory.architecturalRules.bannedPatterns.join(", ")}.`,
     `   Обязательно: ${memory.architecturalRules.mandatoryPatterns.join("; ")}.`,
-    `3. ТЕКУЩАЯ ЦЕЛЕВАЯ ЗАДАЧА [${milestone.id}]:`,
+    `3. ТЕКУЩАЯ ЦЕЛЕВАЯ ЗАДАЧА [${milestone.id}] (Попытка: ${milestone.retryCount + 1}):`,
     `   • Заголовок: ${milestone.title}`,
     `   • Целевой файл: ${milestone.targetFile}`,
     `   • Файл тестов: ${milestone.testFile}`,
-    `   • Описание: ${milestone.description}`,
+    `   • Описание: ${milestone.description}${retryInfo}`,
     `4. СУЩЕСТВУЮЩИЕ КРЕЙТЫ: ${Object.keys(memory.codebaseRegistry.crates).join(", ")}`,
     `5. ЭКСПОРТИРОВАННЫЕ ТИПЫ: ${Object.values(memory.codebaseRegistry.crates).flatMap(c => c.exportedSymbols).join(", ")}`
   ].join("\n");
 }
 
 /**
- * Фаза 3: Обновление Супер-Памяти по итогам выполненного цикла
+ * ФАЗА 3: УМНОЕ ОБНОВЛЕНИЕ ПАМЯТИ С ПРОВЕРКОЙ КАЧЕСТВА ФАЗЫ 1
  */
 export function updateSuperMemoryAfterCycle(
   branchName: string,
   milestoneId: string,
+  phase1Success: boolean,
+  errorReason: string | null,
   newSymbols: string[],
   lesson: string
-): SuperMemoryState {
+): { memory: SuperMemoryState; advanced: boolean } {
   const memory = loadSuperMemory();
   const target = memory.roadmapMilestones.find(m => m.id === milestoneId);
+  let advanced = false;
+
   if (target) {
-    target.status = "COMPLETED";
-    target.completedInBranch = branchName;
-  }
+    if (phase1Success) {
+      target.status = "COMPLETED";
+      target.completedInBranch = branchName;
+      target.lastError = undefined;
 
-  // Обновляем следующий milestone в IN_PROGRESS
-  const next = memory.roadmapMilestones.find(m => m.status === "PENDING");
-  if (next) next.status = "IN_PROGRESS";
+      const next = memory.roadmapMilestones.find(m => m.status === "PENDING");
+      if (next) {
+        next.status = "IN_PROGRESS";
+        advanced = true;
+      }
 
-  // Добавляем новые экспортированные символы
-  if (newSymbols.length > 0 && target) {
-    const crate = memory.codebaseRegistry.crates[target.targetCrate];
-    if (crate) {
-      crate.exportedSymbols = Array.from(new Set([...crate.exportedSymbols, ...newSymbols]));
+      if (newSymbols.length > 0) {
+        const crate = memory.codebaseRegistry.crates[target.targetCrate];
+        if (crate) {
+          crate.exportedSymbols = Array.from(new Set([...crate.exportedSymbols, ...newSymbols]));
+        }
+      }
+    } else {
+      target.status = "IN_PROGRESS";
+      target.retryCount += 1;
+      target.lastError = errorReason || "Синтаксическая ошибка или неполный код";
+      advanced = false;
     }
   }
 
-  // Добавляем инсайт
   if (lesson) {
     memory.lessonsLearned.push(`[${branchName}] ${lesson}`);
     if (memory.lessonsLearned.length > 20) memory.lessonsLearned.shift();
   }
 
   saveSuperMemory(memory);
-  return memory;
+  return { memory, advanced };
 }

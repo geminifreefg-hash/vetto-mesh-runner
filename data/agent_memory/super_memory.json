@@ -81,8 +81,7 @@
       "testFile": "crates/vetto-core/tests/test_abi_v5_scoping.rs",
       "description": "Изоляция сигналов ptrace и абстрактных unix сокетов для дочерних процессов агентов в Linux 6.12+",
       "status": "IN_PROGRESS",
-      "retryCount": 1,
-      "lastError": "Сгенерирован пустой или fallback код"
+      "retryCount": 0
     },
     {
       "id": "M2_SHIM_CACHE_CONCURRENCY",
@@ -118,11 +117,11 @@
       "retryCount": 0
     }
   ],
+  "processedLeads": [],
   "lessonsLearned": [
     "b.ai шлюз требует Concurrency Pool N=2-3 со сглаживанием 500 мс во избежание сброса сокетов.",
     "Groq LPU идеален для пре-валидации синтаксиса Rust и триажа лидов (45-150 мс).",
     "Nemotron-3 Ultra 550B MoE на OpenCode Zen дает глубочайший анализ monotonic restrictions ядра Linux.",
-    "Codestral-22B от NVIDIA лидирует по точности FIM-генерации кода на Rust без паник.",
-    "[day_1:1] Попытка по задаче M1_LANDLOCK_ABI5_SCOPING не прошла гейт: Сгенерирован пустой или fallback код. Назначен повтор."
+    "Codestral-22B от NVIDIA лидирует по точности FIM-генерации кода на Rust без паник."
   ]
 }
