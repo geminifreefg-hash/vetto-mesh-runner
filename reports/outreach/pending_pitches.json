@@ -34,5 +34,17 @@
     },
     "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\n**Short answer:** use VETTO, which sandboxes Claude Code with Linux Landlock — a kernel-native LSM. No containers, no daemon, no root.\n\n## How it works\n\n```bash\nvetto run -- claude\n```\n\nVETTO applies Landlock ruleset *before* spawning the agent process:\n\n- **Read-only:** `/usr`, `/etc`, project dependencies\n- **Read-write:** only your project directory (and a scratch dir)\n- **Denied:** `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.gitconfig`, dotfiles with credentials\n\nThe ruleset is inherited by all child processes — Claude Code's Bash tool, spawned compilers, test runners — everything stays confined.\n\n## Why zero overhead (vs Docker)\n\n| | Docker | VETTO/Landlock |\n|---|---|---|\n| Enforcement point | namespaces + cgroups + veth | in-kernel",
     "status": "BLOCKED_BLACKLIST"
+  },
+  {
+    "timestamp": "2026-09-01T12:35:56.182Z",
+    "targetIssue": {
+      "url": "https://github.com/anthropics/claude-code/issues/1420",
+      "repo": "anthropics/claude-code",
+      "number": 1420,
+      "author": "dev_sec_ops",
+      "context": "How to restrict Claude Code filesystem access without heavy Docker containers?"
+    },
+    "pitch": "Disclaimer: I am the author/maintainer of VETTO (https://github.com/shleder/vetto)\n\n@dev_sec_ops Use VETTO — it sandboxes Claude Code with Linux Landlock (LSM, kernel ≥ 5.13). No daemon, no images, no namespaces to manage:\n\n```bash\n# Allow write only to the project dir, read-only to toolchain, deny the rest\nvetto run --allow-write . --allow-read /usr -- claude\n```\n\nVETTO builds a Landlock ruleset, applies it to the child process, then `exec`s Claude Code. Any path outside the ruleset (e.g. `~/.ssh`, `~/.aws`, dotfiles) gets `EPERM` at the kernel level — the agent can't even stat it.\n\n**Why zero overhead vs Docker:**\n\n- **In-kernel enforcement** — Landlock hooks sit in the VFS path (LSM). Allowed operations are a single in-kernel check, no context switch, no ptrace, no FUSE. Measured overhead on permitted I/O is negligible.\n- **No data copies or overlay layers** — Docker/chroot setups copy or bind-mount files; VETTO operates on the real filesystem in place.\n- **No daemon/runtime tax** — no dockerd, no image pull, no cgroup/network namespace setup. Cold start is ~ms: build ruleset → apply → exec.\n- **Unprivileged** — Landlock requires no root and no runtime kernel config; works on stock distro kernels ≥ 5.13.\n- **Deny-by-default semantics** — unlike container allowlists that leak via mounts, an unlisted path simply does not exist for the process.\n\nDocker answers \"how do I ship an environment\"; Landlock answers \"how do I fence a process\". For restricting an AI agent's filesystem access, the latter is the right tool — and VETTO makes it a one-liner.",
+    "status": "BLOCKED_BLACKLIST"
   }
 ]
