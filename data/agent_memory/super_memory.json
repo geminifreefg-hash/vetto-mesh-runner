@@ -1,7 +1,7 @@
 {
   "version": "0.2.16",
   "executionMode": "LEAD_HUNTER_ONLY",
-  "lastUpdated": "2026-09-01T12:36:04.000Z",
+  "lastUpdated": "2026-09-01T15:21:46.037Z",
   "projectIdentity": {
     "name": "VETTO",
     "coreMission": "Zero-overhead native Linux kernel sandboxing for AI coding agents (Claude Code, Codex, Aider)",
@@ -125,7 +125,9 @@
       "retryCount": 0
     }
   ],
-  "processedLeads": [],
+  "processedLeads": [
+    "https://github.com/AlexanderMattTurner/agent-glovebox/issues/5402"
+  ],
   "lessonsLearned": [
     "b.ai шлюз требует Concurrency Pool N=2-3 со сглаживанием 500 мс во избежание сброса сокетов.",
     "Groq LPU идеален для пре-валидации синтаксиса Rust и триажа лидов (45-150 мс).",
