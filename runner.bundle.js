@@ -354,16 +354,20 @@ function log(phase, agent, msg) {
 }
 
 export function cleanRustCode(raw) {
-  let code = raw.trim();
-  if (code.startsWith("```")) {
-    const firstNewline = code.indexOf("\n");
-    if (firstNewline !== -1) code = code.slice(firstNewline + 1);
+  let cleaned = (raw || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const rustMatch = cleaned.match(/```(?:rust)?\s*([\s\S]*?)```/i);
+  if (rustMatch && rustMatch[1]) {
+    return rustMatch[1].trim();
   }
-  if (code.endsWith("```")) code = code.slice(0, -3).trimEnd();
-  return code.trim();
+  if (cleaned.startsWith("```")) {
+    const firstNewline = cleaned.indexOf("\n");
+    if (firstNewline !== -1) cleaned = cleaned.slice(firstNewline + 1);
+  }
+  if (cleaned.endsWith("```")) cleaned = cleaned.slice(0, -3).trimEnd();
+  return cleaned.trim();
 }
 
-async function callBaiModel(model, systemPrompt, userPrompt, maxTokens = 800) {
+async function callBaiModel(model, systemPrompt, userPrompt, maxTokens = 2500) {
   try {
     const res = await fetch(B_AI_ENDPOINT, {
       method: "POST",
@@ -575,8 +579,8 @@ export async function runPhase1Product(branchName, memory) {
   // 2. Генерация производственного Rust-кода через Codestral-22B
   log("ФАЗА 1", "CODESTRAL-22B (NVIDIA)", `Генерация кода для ${milestone.targetFile}...`);
   let rawRustCode = await callCodestral(
-    `Ты — ведущий Rust-программист VETTO. Пиши строго для ${milestone.targetFile}. Запрещено использовать unwrap(), panic! и todo!.\nСпецификация:\n${spec}\nКонтекст:\n${memoryContext}`,
-    `Напиши полный Rust-код для файла ${milestone.targetFile}. Реализуй ${milestone.title}.`
+    `You are a Senior Rust Systems Programmer. Output ONLY valid, compilable Rust code inside a \`\`\`rust block. No explanations, no conversation. Do not use unwrap(), panic!(), or todo!().\nSpecification:\n${spec}\nContext:\n${memoryContext}`,
+    `Write complete compilable Rust code for ${milestone.targetFile}. Implement ${milestone.title} strictly.`
   );
   let rustCode = cleanRustCode(rawRustCode);
 
@@ -590,8 +594,8 @@ export async function runPhase1Product(branchName, memory) {
   log("ФАЗА 1", "DEEPSEEK-V4 (b.ai)", `Генерация юнит-тестов для ${milestone.testFile}...`);
   const rawTestCode = await callBaiModel(
     "deepseek-v4-flash-vision-exp",
-    `Ты — QA-инженер VETTO. Напиши тесты для ${milestone.testFile} без unwrap().\nКод реализации:\n${rustCode}`,
-    `Создай #[cfg(test)] mod tests для всесторонней проверки реализации ${milestone.title}.`
+    `You are a Rust QA Engineer. Output ONLY valid #[cfg(test)] Rust test code inside a \`\`\`rust block. No explanations.\nImplementation code:\n${rustCode}`,
+    `Create #[cfg(test)] unit tests for ${milestone.title} in ${milestone.testFile}.`
   );
   const testCode = cleanRustCode(rawTestCode);
 
