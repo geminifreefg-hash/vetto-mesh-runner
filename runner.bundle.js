@@ -675,13 +675,11 @@ ${p2.pitch}
 `);
   return { branchInfo, p1, p2, p3 };
 }
-if (process.argv[1]?.endsWith("mvp-pipeline.ts")) {
-  const isDryRun = !process.argv.includes("--live");
-  runCompleteGateMvp(isDryRun).catch((err) => {
-    console.error("[FATAL] \u041E\u0448\u0438\u0431\u043A\u0430 MVP:", err);
-    process.exit(1);
-  });
-}
+var isDryRun = !process.argv.includes("--live");
+runCompleteGateMvp(isDryRun).catch((err) => {
+  console.error("[FATAL] \u041E\u0448\u0438\u0431\u043A\u0430 MVP:", err);
+  process.exit(1);
+});
 export {
   runCompleteGateMvp,
   runPhase1Product,
